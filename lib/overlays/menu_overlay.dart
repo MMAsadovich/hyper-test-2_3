@@ -23,7 +23,7 @@ class MenuOverlay extends StatelessWidget {
               const Text('Tap & Avoid', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800)),
               const SizedBox(height: 10),
               const Text(
-                'Chap tomonga tap = chapga\nO‘ng tomonga tap = o‘ngga\nTo‘qnashmang 🙂',
+                'Chap tomonga tap = Tap\nO‘ng tomonga tap = O‘ngga\nTo‘qnashmang 🙂',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.white70, height: 1.3),
               ),
