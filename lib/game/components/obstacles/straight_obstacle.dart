@@ -1,7 +1,15 @@
-import 'package:flutter/material.dart';
+import 'package:flame/components.dart';
 import 'obstacle_base.dart';
 
 class StraightObstacle extends ObstacleBase {
-  StraightObstacle({required super.speed, required super.onPassed})
-      : super(paint: Paint()..color = const Color(0xFFFF4D4D));
+  StraightObstacle({
+    required super.speed,
+    required super.onPassed,
+  });
+
+  // Straight: base update yetadi (faqat pastga tushadi)
+  @override
+  void update(double dt) {
+    super.update(dt);
+  }
 }

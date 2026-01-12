@@ -1,5 +1,5 @@
-import 'dart:math';
-import 'package:flutter/material.dart';
+import 'dart:math' as math;
+import 'package:flame/components.dart';
 import 'obstacle_base.dart';
 
 class ZigZagObstacle extends ObstacleBase {
@@ -8,24 +8,31 @@ class ZigZagObstacle extends ObstacleBase {
     required super.onPassed,
     required this.amplitude,
     required this.frequency,
-  }) : super(paint: Paint()..color = const Color(0xFFFFC107));
+  });
 
-  final double amplitude;
-  final double frequency;
+  final double amplitude; // px
+  final double frequency; // hz-ish
 
   double _t = 0;
-  double? _startX;
+  double _startX = 0;
+  bool _init = false;
 
   @override
   void update(double dt) {
-    super.update(dt);
+    super.update(dt); // ✅ y pastga + passed check
+
+    // startX ni bir marta olib qolamiz
+    if (!_init) {
+      _startX = position.x;
+      _init = true;
+    }
+
     _t += dt;
-    _startX ??= position.x;
 
-    final s = sin(_t * frequency * pi);
-    position.x = _startX! + (s.sign) * amplitude * (0.5 + 0.5 * s.abs());
+    // zigzag: sign(sin) -> chap/o‘ng keskin
+    final s = math.sin(_t * frequency * math.pi * 2);
+    final dir = s >= 0 ? 1.0 : -1.0;
 
-    final halfW = size.x / 2;
-    position.x = position.x.clamp(halfW, gameRef.size.x - halfW);
+    position.x = _startX + dir * amplitude;
   }
 }

@@ -18,6 +18,7 @@ import 'components/obstacles/obstacle_base.dart';
 import 'components/obstacles/straight_obstacle.dart';
 import 'components/obstacles/zigzag_obstacle.dart';
 import 'components/obstacles/wave_obstacle.dart';
+import 'game_theme.dart';
 
 class TapAvoidGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   static const overlayMenu = 'menu';
@@ -43,12 +44,18 @@ class TapAvoidGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   bool isRunning = false;
   bool continueUsed = false;
 
+  // spawn
   double _spawnTimer = 0;
   double _spawnInterval = 0.80;
-  double _difficultyTimer = 0;
+
+  // difficulty (by score milestones)
+  double _baseSpeed = 240;        // start speed
+  final double _speedStep = 22;   // +speed every 10 score
+  final double _speedJitter = 18; // small random (+/-)
+  int _lastSpeedMilestone = 0;    // last (score ~/ 10)
 
   @override
-  Color backgroundColor() => const Color(0xFF0B1020);
+  Color backgroundColor() => GameTheme.bg;
 
   @override
   Future<void> onLoad() async {
@@ -97,19 +104,27 @@ class TapAvoidGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     // clear obstacles
     children.whereType<ObstacleBase>().toList().forEach((c) => c.removeFromParent());
 
+    // reset score / flags
     score = 0;
     continueUsed = false;
 
+    // reset spawn + difficulty
     _spawnTimer = 0;
-    _difficultyTimer = 0;
     _spawnInterval = 0.80;
+
+    _baseSpeed = 240;
+    _lastSpeedMilestone = 0;
 
     isRunning = true;
 
+    // player reset
     _player.resetSafe();
     _placePlayerCenter();
+
+    // HUD
     _updateHud();
 
+    // overlays + run
     overlays.remove(overlayMenu);
     overlays.remove(overlayGameOver);
     resumeEngine();
@@ -147,6 +162,9 @@ class TapAvoidGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     // revive: obstacles clear
     children.whereType<ObstacleBase>().toList().forEach((c) => c.removeFromParent());
 
+    // reset spawn timer (revive paytida birdan spawn bo‘lib ketmasin)
+    _spawnTimer = 0;
+
     overlays.remove(overlayGameOver);
     isRunning = true;
 
@@ -156,6 +174,16 @@ class TapAvoidGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
   void _onObstaclePassed() {
     score += 1;
+
+    // ✅ every 10 score: speed up + a bit faster spawns
+    final milestone = score ~/ 10; // 0,1,2...
+    if (milestone > _lastSpeedMilestone) {
+      _lastSpeedMilestone = milestone;
+
+      _baseSpeed += _speedStep;
+      _spawnInterval = max(0.45, _spawnInterval - 0.03);
+    }
+
     _updateHud();
   }
 
@@ -170,37 +198,34 @@ class TapAvoidGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       _spawnTimer = 0;
       _spawnObstacle();
     }
-
-    // difficulty
-    _difficultyTimer += dt;
-    if (_difficultyTimer >= 5) {
-      _difficultyTimer = 0;
-      _spawnInterval = max(0.35, _spawnInterval - 0.05);
-    }
   }
 
   void _spawnObstacle() {
     final type = _rng.nextInt(3); // 0 straight, 1 zigzag, 2 wave
 
     final w = _rng.nextDouble() * 40 + 22; // 22..62
-    final speed = _rng.nextDouble() * 160 + 220; // 220..380
+
+    // ✅ speed: base ± small jitter (no extreme fast/slow)
+    final speed = _baseSpeed + (_rng.nextDouble() * _speedJitter * 2 - _speedJitter);
+
     final x = _rng.nextDouble() * (size.x - w) + (w / 2);
 
     ObstacleBase obs;
+
     switch (type) {
       case 1:
         obs = ZigZagObstacle(
           speed: speed,
-          amplitude: _rng.nextDouble() * 60 + 30,
-          frequency: _rng.nextDouble() * 2 + 1.5,
+          amplitude: _rng.nextDouble() * 50 + 25, // yumshoqroq
+          frequency: _rng.nextDouble() * 1.2 + 1.2, // kamroq "telba"
           onPassed: _onObstaclePassed,
         );
         break;
       case 2:
         obs = WaveObstacle(
           speed: speed,
-          amplitude: _rng.nextDouble() * 70 + 25,
-          frequency: _rng.nextDouble() * 2 + 1.2,
+          amplitude: _rng.nextDouble() * 55 + 20,
+          frequency: _rng.nextDouble() * 1.2 + 1.0,
           onPassed: _onObstaclePassed,
         );
         break;
